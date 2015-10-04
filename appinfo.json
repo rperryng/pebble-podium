@@ -7,7 +7,19 @@
     "longName": "Podium",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "fonts/ProximaNova-Alt-Bold.ttf",
+                "name": "FONT_KEY_PROXIMA_NOVA_BOLD_58",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9]",
+                "file": "fonts/ProximaNova-Regular.ttf",
+                "name": "FONT_KEY_PROXIMA_NOVA_REGULAR_48",
+                "type": "font"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "Podium",

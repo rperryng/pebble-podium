@@ -30,25 +30,27 @@ static char* get_minutes_text(struct tm *tick_time) {
 
 static void draw_hours(GContext *ctx, struct tm *tick_time) {
   char* hours_text = get_hours_text(tick_time);
-  GFont hours_font = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+  GFont hours_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_KEY_PROXIMA_NOVA_BOLD_58));
+  GTextAlignment alignment = (tick_time->tm_hour < 20) ? GTextAlignmentCenter : GTextAlignmentLeft;
   graphics_context_set_text_color(ctx, GColorJazzberryJam);
   
-  uint8_t text_height = 42;
+  uint8_t text_height = 58;
   
   // Draw below canvas to bottom of canvas
-  for (int i = 0; i < 42; i++) {
+  for (int i = 0; i < text_height; i++) {
     graphics_draw_text(
       ctx,
       hours_text,
       hours_font,
       GRect(0, s_window_bounds.size.h - i, s_window_bounds.size.w / 2, text_height),
       GTextOverflowModeWordWrap,
-      GTextAlignmentCenter,
+      alignment,
       NULL); 
   }
   
   // Draw from bottom of canvas to hour of day
-  uint8_t length_factor = ((tick_time->tm_hour * 144) / 24) + text_height;
+  uint8_t padding_factor = 9;
+  uint8_t length_factor = text_height + ((tick_time->tm_hour * (144 - padding_factor)) / 24);
   for (int i = 0; i < length_factor; i++) {
     graphics_draw_text(
       ctx,
@@ -56,7 +58,7 @@ static void draw_hours(GContext *ctx, struct tm *tick_time) {
       hours_font,
       GRect(0, s_window_bounds.size.h - i, s_window_bounds.size.w / 2, text_height),
       GTextOverflowModeWordWrap,
-      GTextAlignmentCenter,
+      alignment,
       NULL);
   }
   
@@ -68,16 +70,16 @@ static void draw_hours(GContext *ctx, struct tm *tick_time) {
     hours_font,
     GRect(0, s_window_bounds.size.h - length_factor, s_window_bounds.size.w / 2, text_height),
     GTextOverflowModeWordWrap,
-    GTextAlignmentCenter,
+    alignment,
     NULL);
 }
 
 static void draw_minutes(GContext *ctx, struct tm *tick_time) {
   char* minutes_text = get_minutes_text(tick_time);
-  GFont minutes_font = fonts_get_system_font(FONT_KEY_BITHAM_34_MEDIUM_NUMBERS);
+  GFont minutes_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_KEY_PROXIMA_NOVA_REGULAR_48));
   graphics_context_set_text_color(ctx, GColorTiffanyBlue);
   
-  uint8_t text_height = 34;
+  uint8_t text_height = 48;
   
   // Draw below canvas to bottom of canvas
   for (int i = 0; i < text_height; i++) {
@@ -92,7 +94,8 @@ static void draw_minutes(GContext *ctx, struct tm *tick_time) {
   }
   
   // Draw from bottom of canvas to hour of day
-  uint8_t length_factor = ((tick_time->tm_min * 144) / 60) + text_height;
+  uint8_t padding_factor = 5;
+  uint8_t length_factor = text_height + ((tick_time->tm_min * (144 - padding_factor)) / 60);
   for (int i = 0; i < length_factor; i++) {
     graphics_draw_text(
       ctx,
@@ -121,6 +124,7 @@ static void canvas_update_proc(Layer *this_layer, GContext *ctx) {
   
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
+  tick_time->tm_hour = 22;
   
   draw_hours(ctx, tick_time);
   draw_minutes(ctx, tick_time);
