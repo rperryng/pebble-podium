@@ -1,0 +1,19 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "ryanperrynguyen@gmail.com",
+    "longName": "Podium",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Podium",
+    "uuid": "4ff8c0ef-4690-4514-8d4f-e7b711f15788",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
