@@ -2,6 +2,11 @@
 
 #define CENTER GPoint(72, 84)
 
+typedef struct {
+  int hours;
+  int minutes;
+} Time;
+
 static Window *s_main_window;
 static Layer *s_canvas_layer;
 static GRect s_window_bounds;
@@ -10,7 +15,14 @@ static GFont s_minutes_font;
 static uint8_t s_hours_height;
 static uint8_t s_minutes_height;
 
+static bool s_animating;
+static Time s_last_time;
+static Time s_anim_time;
+
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+  s_last_time.hours = tick_time->tm_hour;
+  s_last_time.minutes = tick_time->tm_min;
+
   layer_mark_dirty(s_canvas_layer);
 }
 
@@ -119,11 +131,61 @@ static void draw_minutes(GContext *ctx, struct tm *tick_time) {
 static void canvas_update_proc(Layer *this_layer, GContext *ctx) {
   graphics_context_set_antialiased(ctx, true);
 
-  time_t temp = time(NULL);
-  struct tm *tick_time = localtime(&temp);
+  struct tm *tick_time = malloc(sizeof(struct tm));
+
+  if (s_animating) {
+    tick_time->tm_hour = s_anim_time.hours;
+    tick_time->tm_min = s_anim_time.minutes;
+  } else {
+    tick_time->tm_hour = s_last_time.hours;
+    tick_time->tm_min = s_last_time.minutes;
+  }
 
   draw_hours(ctx, tick_time);
   draw_minutes(ctx, tick_time);
+}
+
+static void animation_on_start(Animation *anim, void *context) {
+  s_animating = true;
+}
+
+static void animation_on_end(Animation *anim, bool stopped, void *context) {
+  s_animating = false;
+}
+
+static int animation_percentage(AnimationProgress dist_normalized, int max) {
+  return (max * dist_normalized) / ANIMATION_NORMALIZED_MAX;
+}
+
+static void animation_on_update(Animation *anim, AnimationProgress dist_normalized) {
+  s_anim_time.hours = animation_percentage(dist_normalized, s_last_time.hours);
+  s_anim_time.minutes = animation_percentage(dist_normalized, s_last_time.minutes);
+
+  layer_mark_dirty(s_canvas_layer);
+}
+
+static void animate() {
+  Animation *animation = animation_create();
+
+  if (animation) {
+    animation_set_duration(animation, 2000);
+    animation_set_delay(animation, 200);
+    animation_
+    animation_set_curve(animation, AnimationCurveEaseOut);
+
+    static AnimationImplementation animation_implementation = {
+      .update = animation_on_update
+    };
+
+    AnimationImplementation *implementation = &animation_implementation;
+    animation_set_implementation(animation, implementation);
+    animation_set_handlers(animation, (AnimationHandlers) {
+      .started = animation_on_start,
+      .stopped = animation_on_end
+    }, NULL);
+
+    animation_schedule(animation);
+  }
 }
 
 static void main_window_load(Window *window) {
@@ -138,6 +200,13 @@ static void main_window_load(Window *window) {
   s_canvas_layer = layer_create(s_window_bounds);
   layer_set_update_proc(s_canvas_layer, canvas_update_proc);
   layer_add_child(root_layer, s_canvas_layer);
+
+  time_t temp = time(NULL);
+  struct tm *tm_now = localtime(&temp);
+  s_last_time.hours = tm_now->tm_hour;
+  s_last_time.minutes = tm_now->tm_min;
+
+  animate();
 }
 
 static void main_window_unload(Window *window) {
@@ -158,7 +227,7 @@ static void init() {
   bool animated = true;
   window_stack_push(s_main_window, animated);
 
-  tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 }
 
 static void deinit() {
